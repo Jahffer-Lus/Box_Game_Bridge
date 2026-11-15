@@ -7,7 +7,7 @@ Projeto para usar a TFT conectada ao Arduino como uma pequena tela externa para 
 - **[Arduino/](Arduino/)** — local do firmware que será desenvolvido.
 - **[PC/](PC/)** — aplicativo Java para Arch Linux.
 - **[Bibliotecas/](Bibliotecas/)** — pacote ZIP das bibliotecas necessárias para a TFT.
-- **[GUIA_HARDWARE_E_LIGACOES.txt](GUIA_HARDWARE_E_LIGACOES.txt)** — componentes necessários, ligação fio por fio, bibliotecas e instalação.
+- **[GUIA_HARDWARE_E_LIGACOES.md](GUIA_HARDWARE_E_LIGACOES.md)** — componentes necessários, ligação fio por fio, bibliotecas e instalação.
 
 ## Bibliotecas
 
