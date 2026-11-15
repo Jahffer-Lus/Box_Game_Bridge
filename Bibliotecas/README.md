@@ -1,28 +1,16 @@
 # Bibliotecas do BOX GAME BRIDGE
 
-Esta pasta reúne as bibliotecas necessárias para compilar o firmware do Arduino que controla a TFT ST7735.
+O pacote completo está em **[BOX_GAME_BRIDGE_LIBRARIES.zip](BOX_GAME_BRIDGE_LIBRARIES.zip)**.
 
-## ZIPs incluídos
+Ele contém três pastas de biblioteca prontas para extrair:
+- `Adafruit_GFX` — versão 1.12.6.
+- `Adafruit_ST7735` — versão 1.12.0.
+- `Adafruit_BusIO` — versão 1.17.4.
 
-- `Adafruit_GFX_1.12.6.zip` — núcleo gráfico Adafruit.
-- `Adafruit_ST7735_1.12.0.zip` — driver da tela ST7735.
-- `Adafruit_BusIO_1.17.4.zip` — dependência de comunicação usada pelo GFX.
+Extraia o pacote e copie essas três pastas para `~/Arduino/libraries/`. Depois, reinicie a Arduino IDE.
 
-Os três pacotes contêm os arquivos de código-fonte, metadados e avisos/licenças de seus projetos originais.
+As bibliotecas nativas `SPI.h`, `analogRead()` e `digitalRead()` já fazem parte do ambiente Arduino Uno e não precisam de ZIP separado.
 
-## Instalação
+O aplicativo Java do PC usa somente as bibliotecas padrão do JDK. No Arch Linux, instale `jdk-openjdk`, `wmctrl`, `xdotool` e `coreutils`.
 
-No Arduino IDE, use **Sketch → Include Library → Add .ZIP Library…** e selecione cada um dos três ZIPs, um de cada vez.
-
-Também é possível extrair cada ZIP e copiar as pastas `Adafruit_GFX`, `Adafruit_ST7735` e `Adafruit_BusIO` para `~/Arduino/libraries/`. Reinicie a Arduino IDE depois.
-
-## Outras dependências
-
-- `SPI.h`: já vem com o pacote de placas Arduino AVR usado pelo Uno; não precisa baixar separadamente.
-- Joystick: será lido com `analogRead()` e `digitalRead()`; não precisa de biblioteca.
-- PC/Java: o aplicativo usa apenas bibliotecas padrão do JDK. Não há JAR externo para este projeto.
-- Arch Linux: o aplicativo do PC também usa `wmctrl`, `xdotool` e `stty` (do pacote `coreutils`).
-
-## Observação
-
-O firmware do Arduino ainda será criado. Essas são as bibliotecas de tela previstas para o projeto atual; caso o código futuro acrescente recursos diferentes, a lista poderá ser atualizada.
+O firmware Arduino ainda será criado. As versões incluídas foram verificadas nos repositórios oficiais da Adafruit em 15/11/2026.
