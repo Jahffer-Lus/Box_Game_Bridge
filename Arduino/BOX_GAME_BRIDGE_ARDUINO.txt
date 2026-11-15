@@ -297,7 +297,7 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
 
   tft.initR(INITR_BLACKTAB);
-  tft.setRotation(1); // paisagem: 160 x 128
+  tft.setRotation(3); // paisagem invertida em 180 graus: 160 x 128
   showStartupScreen();
 }
 
