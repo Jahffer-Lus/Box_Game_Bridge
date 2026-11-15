@@ -21,10 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *     tile_x tile_y (0..19, 0..15), followed by 8*8 RGB565 pixels,
  *     each pixel high byte then low byte (128 bytes per tile).
  *
- * Arduino -> Host joystick protocol (ASCII line):
- *   J:HH\n
- * where HH is a two-digit hexadecimal bit mask:
- *   bit 0=UP, bit 1=DOWN, bit 2=LEFT, bit 3=RIGHT, bit 4=ENTER/SW.
+ * Arduino -> Host serial lines:
+ *   J:HH\n = joystick bit mask (hexadecimal)
+ *   R\n    = block drawn successfully; PC may send the next tile
+ * Joystick bits: 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT, 4=ENTER/SW.
  *
  * Display frame is 160x128 landscape. The Arduino TFT firmware must rotate
  * the ST7735 to landscape and implement the packet format above.
