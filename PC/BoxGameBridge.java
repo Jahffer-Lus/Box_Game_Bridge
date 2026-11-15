@@ -385,7 +385,7 @@ public class BoxGameBridge {
         return out;
     }
 
-    private synchronized int sendChangedTiles(BufferedImage image, int[] baseline)
+    private int sendChangedTiles(BufferedImage image, int[] baseline)
             throws IOException, InterruptedException {
         if (!connected || serialOut == null) return 0;
 
