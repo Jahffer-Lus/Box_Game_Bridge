@@ -30,6 +30,10 @@ O código que será copiado para a Arduino IDE está no arquivo:
 
 **Atenção:** como MOSI e SCK da tela foram ligados a D5 e D6, o firmware usa SPI por software. A biblioteca Adafruit_ST7735 oferece um construtor para MOSI/SCK definidos por pinos. Isso pode ser mais lento do que o SPI de hardware; os 10 FPS continuam sendo uma meta para medir.
 
+## Orientação da tela
+
+A TFT fica em modo paisagem (160×128), girada em **180°** usando `tft.setRotation(3)`. Para voltar à orientação anterior, use `tft.setRotation(1)`.
+
 ## Como usar
 
 1. Abra `Arduino/BOX_GAME_BRIDGE_ARDUINO.txt` no GitHub.
