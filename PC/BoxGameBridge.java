@@ -479,9 +479,10 @@ public class BoxGameBridge {
 
     private void runKeyCommand(String action, String windowId, String key) {
         try {
-            // Direct X11 window targeting keeps the bridge's Swing window from stealing game input.
-            new ProcessBuilder("xdotool", action, "--window", windowId, key)
-                    .redirectErrorStream(true).start();
+            // Foca o Undertale e usa XTEST (sem --window) para manter a tecla
+            // realmente pressionada até chegar o evento keyup do joystick.
+            new ProcessBuilder("xdotool", "windowfocus", "--sync", windowId,
+                    action, key).redirectErrorStream(true).start();
         } catch (IOException ignored) { }
     }
 
