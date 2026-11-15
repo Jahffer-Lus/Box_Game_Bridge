@@ -1,0 +1,105 @@
+BOX GAME BRIDGE 1.0
+GUIA DE HARDWARE, COMPONENTES, FIOS E BIBLIOTECAS
+================================================
+
+1. COMPONENTES NECESSARIOS
+-------------------------
+- 1 Arduino Uno R3.
+- 1 tela TFT SPI ST7735 de 1,8 polegada, 128 x 160 pixels.
+- 1 modulo joystick de dois eixos com botao SW (por exemplo, KY-023).
+- 1 cabo USB do Arduino para o computador.
+- Fios jumper adequados aos conectores dos modulos.
+- 1 computador com Arch Linux.
+
+SEGURANCA ELETRICA:
+- Desconecte o Arduino do USB antes de mudar qualquer fio.
+- Confira a tensao permitida no modulo TFT exato. Alguns modulos aceitam sinais de 5 V; outros trabalham apenas com logica de 3,3 V.
+- Se a TFT nao tiver conversao de nivel logico/compatibilidade com 5 V, use conversor de nivel logico 5 V -> 3,3 V nos sinais que saem do Uno.
+- Nao ligue VCC em 5 V sem confirmacao expressa no modulo.
+- Mantenha a alimentacao de 3,3 V que ja foi usada no seu modulo, desde que esteja dentro da especificacao dele.
+- Pecas pequenas, soldagem e alteracoes de alimentacao devem ser conferidas com um adulto.
+
+2. LIGACOES DA TFT ST7735 AO ARDUINO UNO
+---------------------------------------
+Usaremos o SPI de hardware do Uno para a tela, para obter a melhor velocidade possivel.
+
+Pino escrito na TFT       Arduino Uno
+-------------------       -----------
+GND                       GND
+VCC                       3V3 (se esta for a tensao exigida pelo seu modulo)
+CS                        D10
+DC ou A0                  D8
+RST ou RES                D7
+SDA ou MOSI               D11 (MOSI)
+SCL ou SCK ou CLK          D13 (SCK)
+LED ou BL                 Conforme a especificacao do modulo; manter a ligacao de backlight ja testada.
+
+ATENCAO:
+- Na TFT SPI, o pino chamado SDA normalmente e MOSI (dados SPI). Nao e o SDA I2C do Arduino A4.
+- Nao use A4/A5 para esta ligacao SPI de hardware.
+- A tela ST7735 nao precisa do sinal MISO para desenhar.
+- Se a placa da TFT expuser um pino separado SD_CS/SD_CS#, conecte-o ao D9 e o firmware manterá D9 em HIGH para desativar o leitor microSD. Se esse pino nao existir ou nao estiver acessivel, nao invente uma ligacao.
+- O BOX GAME BRIDGE nao usa o cartao microSD. O cartao pode ficar fora do modulo.
+
+3. LIGACOES DO JOYSTICK
+-----------------------
+Pino do joystick          Arduino Uno
+-----------------         -----------
+GND                       GND
+VCC ou +5V                5V
+VRx                       A0
+VRy                       A1
+SW                        D2
+
+O firmware usara as entradas analogicas A0/A1 para os eixos e D2 para o botao. O botao SW sera o Enter do jogo.
+
+4. CABO USB E PINOS QUE DEVEM FICAR LIVRES
+-----------------------------------------
+- Ligue o Arduino Uno ao computador usando o cabo USB.
+- Deixe D0/RX e D1/TX livres; sao usados pela comunicacao serial USB.
+- Nao ligue buzzer, joystick ou outro componente em D0/D1 durante o uso do BOX GAME BRIDGE.
+- A comunicacao serial inicial do projeto esta configurada em 500000 baud.
+
+5. COMO O SISTEMA FUNCIONA
+--------------------------
+- O Undertale roda normalmente no computador.
+- O aplicativo Java no PC captura a janela do jogo e reduz a imagem para 160 x 128.
+- O PC compara o quadro novo com o anterior e envia blocos de 8 x 8 que mudaram.
+- O Arduino recebe os blocos pela USB e atualiza a TFT.
+- O joystick envia os comandos para o PC, que os transforma nas setas do teclado e Enter.
+- Meta inicial de atualizacao: ate 10 FPS. O resultado real depende da quantidade de blocos alterados e da velocidade da conexao.
+- O PC faz o processamento e guarda os arquivos/saves. O Arduino nao precisa de cartao SD para este projeto.
+
+6. BIBLIOTECAS DO ARDUINO
+-------------------------
+Instale estas bibliotecas (ou copie as pastas do ZIP para ~/Arduino/libraries/):
+
+- Adafruit GFX Library 1.12.6
+- Adafruit ST7735 and ST7789 Library 1.12.0
+- Adafruit BusIO 1.17.4
+
+O pacote completo esta em:
+Bibliotecas/BOX_GAME_BRIDGE_LIBRARIES.zip
+
+SPI.h ja vem com o pacote de placas Arduino AVR para Uno.
+O joystick usa analogRead() e digitalRead(), sem biblioteca adicional.
+
+7. SOFTWARE DO COMPUTADOR (ARCH LINUX)
+-------------------------------------
+Instale os requisitos:
+
+sudo pacman -S jdk-openjdk wmctrl xdotool coreutils
+
+- Java usa bibliotecas padrao do JDK; nao e necessario baixar JAR de terceiros.
+- wmctrl e xdotool ajudam a localizar e controlar a janela do jogo.
+- stty e fornecido pelo coreutils e configura a porta serial.
+
+8. ESTRUTURA DO REPOSITORIO
+---------------------------
+Arduino/       Firmware que sera desenvolvido.
+PC/            Aplicativo Java do computador.
+Bibliotecas/   ZIP das bibliotecas Arduino.
+Este arquivo   Guia de hardware e instalacao.
+
+IMPORTANTE:
+O firmware Arduino ainda esta em desenvolvimento. Nao conecte todos os fios e espere o jogo funcionar antes de o codigo Arduino correspondente ser criado e testado.
