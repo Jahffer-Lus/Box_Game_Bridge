@@ -50,6 +50,7 @@ A TFT fica em modo paisagem (160×128), girada em **180°** usando `tft.setRotat
 - Envia os controles ao PC como `J:HH\n`.
 - Recebe os pacotes `BX` do aplicativo Java pela USB Serial a 500000 baud.
 - Atualiza a TFT ST7735 em blocos de 8×8 pixels.
+- Envia `R` pela serial depois de desenhar cada bloco, confirmando ao PC que pode mandar o próximo.
 - Usa somente um buffer de tile de 128 bytes, em vez de guardar a tela inteira na SRAM.
 - Não usa o microSD.
 
