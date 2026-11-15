@@ -8,6 +8,8 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -59,6 +61,7 @@ public class BoxGameBridge {
     private volatile FileOutputStream serialOut;
     private Thread serialReaderThread;
     private Thread captureThread;
+    // Cada bloco enviado precisa ser confirmado pelo Arduino com uma linha R.\n    private final BlockingQueue<Boolean> tileAcks = new LinkedBlockingQueue<>();
     private final AtomicBoolean closing = new AtomicBoolean(false);
     private int sequence = 0;
     private long totalTilesSent = 0;
@@ -254,6 +257,10 @@ public class BoxGameBridge {
             String line;
             while (connected && (line = reader.readLine()) != null) {
                 line = line.trim();
+                if (line.equals("R")) {
+                    tileAcks.offer(Boolean.TRUE);
+                    continue;
+                }
                 if (line.startsWith("J:") && line.length() >= 4) {
                     try {
                         int newMask = Integer.parseInt(line.substring(2, 4), 16) & 0x1F;
@@ -296,6 +303,7 @@ public class BoxGameBridge {
         try {
             runCommand(List.of("wmctrl", "-ia", target.id), 2);
             Robot robot = new Robot();
+            tileAcks.clear();
             streaming = true;
             startButton.setEnabled(false);
             stopButton.setEnabled(true);
@@ -376,11 +384,11 @@ public class BoxGameBridge {
         return out;
     }
 
-    private synchronized int sendChangedTiles(BufferedImage image, int[] baseline) throws IOException {
+    private synchronized int sendChangedTiles(BufferedImage image, int[] baseline)
+            throws IOException, InterruptedException {
         if (!connected || serialOut == null) return 0;
-        ByteArrayOutputStream payload = new ByteArrayOutputStream(8 + MAX_TILES_PER_FRAME * TILE_BYTES);
-        List<int[]> changed = new ArrayList<>(MAX_TILES_PER_FRAME);
 
+        List<int[]> changed = new ArrayList<>(MAX_TILES_PER_FRAME);
         for (int ty = 0; ty < TILE_ROWS && changed.size() < MAX_TILES_PER_FRAME; ty++) {
             for (int tx = 0; tx < TILE_COLS && changed.size() < MAX_TILES_PER_FRAME; tx++) {
                 boolean different = false;
@@ -397,19 +405,21 @@ public class BoxGameBridge {
             }
         }
 
-        if (changed.isEmpty()) return 0;
-        int count = changed.size();
-        payload.write('B');
-        payload.write('X');
-        payload.write(1); // protocol version
-        payload.write(1); // packet type: frame tiles
-        payload.write((sequence >>> 8) & 0xFF);
-        payload.write(sequence & 0xFF);
-        payload.write((count >>> 8) & 0xFF);
-        payload.write(count & 0xFF);
-
+        int sent = 0;
         for (int[] tile : changed) {
+            if (!connected || !streaming) break;
+
             int tx = tile[0], ty = tile[1];
+            ByteArrayOutputStream payload = new ByteArrayOutputStream(8 + TILE_BYTES);
+            payload.write('B');
+            payload.write('X');
+            payload.write(1); // versão do protocolo
+            payload.write(1); // pacote de blocos de imagem
+            payload.write((sequence >>> 8) & 0xFF);
+            payload.write(sequence & 0xFF);
+            payload.write(0); // exatamente um bloco por pacote
+            payload.write(1);
+
             payload.write(tx);
             payload.write(ty);
             for (int py = 0; py < TILE; py++) {
@@ -423,15 +433,39 @@ public class BoxGameBridge {
                     int rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >>> 3);
                     payload.write((rgb565 >>> 8) & 0xFF);
                     payload.write(rgb565 & 0xFF);
-                    baseline[y * OUT_W + x] = rgb & 0xFFFFFF;
                 }
             }
+
+            // Envia um único bloco. O Arduino responde R somente depois de desenhá-lo.
+            serialOut.write(payload.toByteArray());
+            serialOut.flush();
+
+            Boolean ack = null;
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (ack == null && connected && streaming && System.nanoTime() < deadline) {
+                ack = tileAcks.poll(100, TimeUnit.MILLISECONDS);
+            }
+
+            if (ack == null) {
+                if (!connected || !streaming) break;
+                throw new IOException("O Arduino não confirmou o desenho do bloco (sem resposta R).");
+            }
+
+            // Só marca os pixels como enviados depois da confirmação do Arduino.
+            for (int py = 0; py < TILE; py++) {
+                for (int px = 0; px < TILE; px++) {
+                    int x = tx * TILE + px;
+                    int y = ty * TILE + py;
+                    baseline[y * OUT_W + x] = image.getRGB(x, y) & 0xFFFFFF;
+                }
+            }
+
+            sequence = (sequence + 1) & 0xFFFF;
+            sent++;
         }
-        serialOut.write(payload.toByteArray());
-        serialOut.flush();
-        sequence = (sequence + 1) & 0xFFFF;
-        totalTilesSent += count;
-        return count;
+
+        totalTilesSent += sent;
+        return sent;
     }
 
     private void runKeyCommand(String action, String windowId, String key) {
