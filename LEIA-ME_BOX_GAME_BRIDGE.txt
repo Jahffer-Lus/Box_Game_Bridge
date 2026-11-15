@@ -1,0 +1,35 @@
+BOX GAME BRIDGE 1.0 - prototipo Java para Arch Linux
+
+ARQUIVOS
+- BoxGameBridge.java: codigo-fonte Java.
+- BOX_GAME_BRIDGE_1_0.jar: aplicativo Java compilado.
+
+REQUISITOS NO ARCH LINUX
+sudo pacman -S jdk-openjdk wmctrl xdotool
+
+EXECUTAR PELO CODIGO-FONTE
+javac BoxGameBridge.java
+java BoxGameBridge
+
+EXECUTAR PELO JAR
+java -jar BOX_GAME_BRIDGE_1_0.jar
+
+COMO USAR
+1. Abra Undertale em uma janela visivel (nao minimizada).
+2. Inicie o BOX GAME BRIDGE.
+3. Clique em Procurar Undertale.
+4. Clique em Procurar Arduino e selecione /dev/ttyACM0 ou /dev/ttyUSB0.
+5. Clique em Conectar Arduino.
+6. Clique em Iniciar transmissao.
+
+NOTAS IMPORTANTES
+- Esta versao captura a janela usando wmctrl + Java Robot e foi feita para X11/XWayland.
+- A janela do jogo precisa ficar visivel e nao pode ficar coberta por outra janela durante a captura.
+- O Arduino precisa de um firmware correspondente para receber os pacotes BX e enviar as linhas J:HH.
+- Protocolo de joystick recebido pelo PC: J:HH\n. Bits: 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT, 4=ENTER/SW.
+- Protocolo de imagem enviado ao Arduino: BX, versao 1, tipo 1, sequencia uint16 big-endian, numero de tiles uint16 big-endian; depois, para cada tile, x, y e 64 pixels RGB565 (byte alto primeiro). Cada tile mede 8x8 pixels. A imagem tem 160x128 pixels em orientacao paisagem.
+- Envia no maximo 30 tiles por ciclo de 100 ms para nao sobrecarregar a serial a 500000 baud. Isso limita a taxa de atualizacao real quando muitas areas mudam; 10 FPS e uma meta, nao garantia.
+- Para usar a serial USB, os pinos RX/TX do Arduino (D0/D1) devem ficar livres. Desconecte qualquer buzzer ou outro componente ligado a esses pinos durante o uso.
+- Se o Linux negar acesso a /dev/ttyACM0, pode ser necessario adicionar o usuario ao grupo uucp e entrar novamente na sessao:
+  sudo usermod -aG uucp "$USER"
+- Em Wayland puro, a localizacao/captura de janelas pode nao funcionar. Se Undertale nao for encontrado, tente uma sessao X11 ou confirme se o jogo esta rodando como janela XWayland.
