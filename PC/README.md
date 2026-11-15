@@ -39,3 +39,8 @@ java -jar PC/BoxGameBridge.jar
 ```
 
 Use o JAR recompilado: uma cópia antiga não terá o controle de fluxo com confirmação `R`.
+
+
+### Controle direcional contínuo
+
+O joystick envia eventos de pressionar (`keydown`) e soltar (`keyup`) para as setas e Enter. O aplicativo foca a janela do Undertale antes de cada evento e usa eventos de teclado XTEST, para que a tecla permaneça pressionada enquanto o joystick ficar inclinado e seja solta quando voltar ao centro.
