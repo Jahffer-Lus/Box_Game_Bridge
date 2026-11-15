@@ -106,6 +106,10 @@ void drawReceivedTile() {
   } else {
     rxState = RX_TILE_X;
   }
+
+  // Confirma ao PC que este bloco terminou de ser desenhado na TFT.
+  Serial.write('R');
+  Serial.write('\n');
 }
 
 void showWaitingTransmissionScreen() {
