@@ -1,0 +1,39 @@
+name: Gerar BOX GAME BRIDGE JAR
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "PC/BoxGameBridge.java"
+      - ".github/workflows/gerar-jar.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Compilar e criar JAR executavel
+        run: |
+          mkdir -p build
+          javac -encoding UTF-8 -d build PC/BoxGameBridge.java
+          jar --create --file BoxGameBridge.jar --main-class BoxGameBridge -C build .
+
+      - name: Publicar BoxGameBridge.jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: BoxGameBridge
+          path: BoxGameBridge.jar
+          if-no-files-found: error
+          retention-days: 30
