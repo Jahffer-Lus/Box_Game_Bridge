@@ -61,7 +61,8 @@ public class BoxGameBridge {
     private volatile FileOutputStream serialOut;
     private Thread serialReaderThread;
     private Thread captureThread;
-    // Cada bloco enviado precisa ser confirmado pelo Arduino com uma linha R.\n    private final BlockingQueue<Boolean> tileAcks = new LinkedBlockingQueue<>();
+    // Cada bloco enviado precisa ser confirmado pelo Arduino com uma linha R.
+    private final BlockingQueue<Boolean> tileAcks = new LinkedBlockingQueue<>();
     private final AtomicBoolean closing = new AtomicBoolean(false);
     private int sequence = 0;
     private long totalTilesSent = 0;
