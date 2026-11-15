@@ -25,3 +25,17 @@ Ao clicar em **Conectar Arduino**, o aplicativo envia o aviso `W` ao firmware, e
 A meta inicial é até 10 FPS; a taxa real depende da quantidade de blocos alterados e da velocidade serial.
 
 **Importante:** o firmware correspondente precisa estar instalado no Arduino. Veja a pasta `../Arduino/`.
+
+
+### Recompilar manualmente depois de atualizar o código
+
+Na pasta principal do repositório, execute:
+
+```bash
+mkdir -p build
+javac -encoding UTF-8 -d build PC/BoxGameBridge.java
+jar --create --file PC/BoxGameBridge.jar --main-class BoxGameBridge -C build .
+java -jar PC/BoxGameBridge.jar
+```
+
+Use o JAR recompilado: uma cópia antiga não terá o controle de fluxo com confirmação `R`.
