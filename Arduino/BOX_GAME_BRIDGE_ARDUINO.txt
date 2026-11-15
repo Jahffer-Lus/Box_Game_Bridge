@@ -1,0 +1,312 @@
+/*
+  BOX GAME BRIDGE 1.0 - firmware do Arduino Uno R3
+  Copie este codigo para um sketch novo da Arduino IDE.
+
+  Hardware:
+    TFT ST7735: CS D10, DC D8, RST D7, MOSI D11, SCK D13
+    Joystick:  VRx A0, VRy A1, SW D2
+    SD_CS (se existir no modulo TFT): D9 mantido em HIGH (desativado)
+
+  Protocolo recebido do PC (inteiros multibyte em big-endian):
+    'B' 'X' 0x01 0x01 seq_hi seq_lo tile_count_hi tile_count_lo
+    Para cada tile:
+      tile_x, tile_y, 64 pixels RGB565 (cada pixel: byte alto, byte baixo)
+    Cada tile e 8x8 pixels. A tela enviada pelo PC e 160x128.
+
+  Protocolo enviado ao PC:
+    J:HH\n
+    bit 0 = cima; bit 1 = baixo; bit 2 = esquerda;
+    bit 3 = direita; bit 4 = botao SW / Enter.
+
+  IMPORTANTE:
+    - Nao envie mensagens de depuracao pela Serial; ela e o canal do protocolo.
+    - Este firmware nao usa microSD.
+    - Ele guarda somente um tile de 8x8 (128 bytes), nao a tela inteira.
+*/
+
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ST7735.h>
+
+// ---------------- PINOS ----------------
+#define TFT_CS    10
+#define TFT_DC     8
+#define TFT_RST    7
+#define SD_CS      9   // opcional: manter o leitor SD desativado, se conectado
+
+#define JOY_X     A0
+#define JOY_Y     A1
+#define JOY_SW     2
+
+// ---------------- TELA / PROTOCOLO ----------------
+static const uint16_t SCREEN_W = 160;
+static const uint16_t SCREEN_H = 128;
+static const uint8_t TILE_SIZE = 8;
+static const uint8_t TILE_COLS = SCREEN_W / TILE_SIZE; // 20
+static const uint8_t TILE_ROWS = SCREEN_H / TILE_SIZE; // 16
+static const uint8_t PROTOCOL_VERSION = 1;
+static const uint8_t PACKET_FRAME_TILES = 1;
+static const uint32_t SERIAL_BAUD = 500000UL;
+
+Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_RST); // SPI de hardware do Uno
+
+// Um tile RGB565 ocupa 8*8*2 = 128 bytes. Isso cabe na SRAM do Uno.
+uint16_t tilePixels[TILE_SIZE * TILE_SIZE];
+
+// ---------------- RECEPTOR SERIAL ----------------
+enum RxState : uint8_t {
+  RX_WAIT_B,
+  RX_WAIT_X,
+  RX_VERSION,
+  RX_TYPE,
+  RX_SEQUENCE_HIGH,
+  RX_SEQUENCE_LOW,
+  RX_COUNT_HIGH,
+  RX_COUNT_LOW,
+  RX_TILE_X,
+  RX_TILE_Y,
+  RX_PIXEL_HIGH,
+  RX_PIXEL_LOW
+};
+
+RxState rxState = RX_WAIT_B;
+uint16_t rxTileCount = 0;
+uint16_t rxTilesRemaining = 0;
+uint8_t rxTileX = 0;
+uint8_t rxTileY = 0;
+uint8_t rxPixelIndex = 0;
+uint8_t rxPixelHigh = 0;
+uint8_t rxSequenceHigh = 0;
+unsigned long rxLastByteAt = 0;
+
+void resetReceiver() {
+  rxState = RX_WAIT_B;
+  rxTileCount = 0;
+  rxTilesRemaining = 0;
+  rxPixelIndex = 0;
+}
+
+void beginMagicIfPossible(uint8_t value) {
+  rxState = (value == 'B') ? RX_WAIT_X : RX_WAIT_B;
+}
+
+void drawReceivedTile() {
+  if (rxTileX < TILE_COLS && rxTileY < TILE_ROWS) {
+    const int16_t x = (int16_t)rxTileX * TILE_SIZE;
+    const int16_t y = (int16_t)rxTileY * TILE_SIZE;
+    tft.drawRGBBitmap(x, y, tilePixels, TILE_SIZE, TILE_SIZE);
+  }
+
+  if (rxTilesRemaining > 0) {
+    rxTilesRemaining--;
+  }
+
+  if (rxTilesRemaining == 0) {
+    resetReceiver();
+  } else {
+    rxState = RX_TILE_X;
+  }
+}
+
+void processSerialByte(uint8_t value) {
+  switch (rxState) {
+    case RX_WAIT_B:
+      if (value == 'B') rxState = RX_WAIT_X;
+      break;
+
+    case RX_WAIT_X:
+      if (value == 'X') rxState = RX_VERSION;
+      else beginMagicIfPossible(value);
+      break;
+
+    case RX_VERSION:
+      if (value == PROTOCOL_VERSION) rxState = RX_TYPE;
+      else beginMagicIfPossible(value);
+      break;
+
+    case RX_TYPE:
+      if (value == PACKET_FRAME_TILES) rxState = RX_SEQUENCE_HIGH;
+      else beginMagicIfPossible(value);
+      break;
+
+    case RX_SEQUENCE_HIGH:
+      rxSequenceHigh = value;
+      rxState = RX_SEQUENCE_LOW;
+      break;
+
+    case RX_SEQUENCE_LOW:
+      (void)rxSequenceHigh;
+      rxState = RX_COUNT_HIGH;
+      break;
+
+    case RX_COUNT_HIGH:
+      rxTileCount = ((uint16_t)value) << 8;
+      rxState = RX_COUNT_LOW;
+      break;
+
+    case RX_COUNT_LOW:
+      rxTileCount |= value;
+      // O aplicativo envia no maximo 30 tiles por pacote. Limite defensivo.
+      if (rxTileCount == 0 || rxTileCount > 30) {
+        resetReceiver();
+      } else {
+        rxTilesRemaining = rxTileCount;
+        rxState = RX_TILE_X;
+      }
+      break;
+
+    case RX_TILE_X:
+      rxTileX = value;
+      rxState = RX_TILE_Y;
+      break;
+
+    case RX_TILE_Y:
+      rxTileY = value;
+      rxPixelIndex = 0;
+      rxState = RX_PIXEL_HIGH;
+      break;
+
+    case RX_PIXEL_HIGH:
+      rxPixelHigh = value;
+      rxState = RX_PIXEL_LOW;
+      break;
+
+    case RX_PIXEL_LOW:
+      tilePixels[rxPixelIndex] = (((uint16_t)rxPixelHigh) << 8) | value;
+      rxPixelIndex++;
+      if (rxPixelIndex >= (TILE_SIZE * TILE_SIZE)) {
+        drawReceivedTile();
+      } else {
+        rxState = RX_PIXEL_HIGH;
+      }
+      break;
+  }
+}
+
+void serviceSerialInput() {
+  // Se um pacote foi interrompido por muito tempo, abandona o pacote parcial.
+  if (rxState != RX_WAIT_B && (millis() - rxLastByteAt) > 1000UL) {
+    resetReceiver();
+  }
+
+  while (Serial.available() > 0) {
+    int incoming = Serial.read();
+    if (incoming < 0) break;
+    rxLastByteAt = millis();
+    processSerialByte((uint8_t)incoming);
+  }
+}
+
+// ---------------- JOYSTICK ----------------
+static const uint8_t BIT_UP    = 0x01;
+static const uint8_t BIT_DOWN  = 0x02;
+static const uint8_t BIT_LEFT  = 0x04;
+static const uint8_t BIT_RIGHT = 0x08;
+static const uint8_t BIT_ENTER = 0x10;
+
+uint8_t joystickMask = 0;
+unsigned long lastJoystickReportAt = 0;
+
+int buttonRawState = HIGH;
+int buttonStableState = HIGH;
+unsigned long buttonChangedAt = 0;
+
+void updateButtonDebounce(unsigned long now) {
+  const int reading = digitalRead(JOY_SW);
+  if (reading != buttonRawState) {
+    buttonRawState = reading;
+    buttonChangedAt = now;
+  }
+
+  if ((now - buttonChangedAt) >= 25UL) {
+    buttonStableState = buttonRawState;
+  }
+}
+
+void updateJoystickMask() {
+  const int x = analogRead(JOY_X);
+  const int y = analogRead(JOY_Y);
+
+  // Histerese evita que o personagem fique tremendo perto do centro.
+  if (x < 350) joystickMask |= BIT_LEFT;
+  else if (x > 450) joystickMask &= (uint8_t)~BIT_LEFT;
+
+  if (x > 650) joystickMask |= BIT_RIGHT;
+  else if (x < 550) joystickMask &= (uint8_t)~BIT_RIGHT;
+
+  if (y < 350) joystickMask |= BIT_UP;
+  else if (y > 450) joystickMask &= (uint8_t)~BIT_UP;
+
+  if (y > 650) joystickMask |= BIT_DOWN;
+  else if (y < 550) joystickMask &= (uint8_t)~BIT_DOWN;
+
+  if (buttonStableState == LOW) joystickMask |= BIT_ENTER;
+  else joystickMask &= (uint8_t)~BIT_ENTER;
+}
+
+void sendJoystickReport() {
+  static const char HEX_DIGITS[] = "0123456789ABCDEF";
+  Serial.write('J');
+  Serial.write(':');
+  Serial.write(HEX_DIGITS[(joystickMask >> 4) & 0x0F]);
+  Serial.write(HEX_DIGITS[joystickMask & 0x0F]);
+  Serial.write('\n');
+}
+
+void serviceJoystick() {
+  const unsigned long now = millis();
+  updateButtonDebounce(now);
+
+  if ((now - lastJoystickReportAt) >= 20UL) {
+    updateJoystickMask();
+    sendJoystickReport();
+    lastJoystickReportAt = now;
+  }
+}
+
+// ---------------- INICIALIZACAO ----------------
+void showStartupScreen() {
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextWrap(false);
+  tft.setTextSize(1);
+  tft.setTextColor(ST77XX_CYAN);
+  tft.setCursor(8, 26);
+  tft.println(F("BOX GAME BRIDGE"));
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setCursor(8, 48);
+  tft.println(F("Arduino Uno R3"));
+  tft.setCursor(8, 66);
+  tft.println(F("TFT ST7735 OK"));
+  tft.setCursor(8, 84);
+  tft.println(F("Aguardando PC..."));
+  tft.setTextColor(ST77XX_CYAN);
+  tft.setCursor(8, 108);
+  tft.println(F("Meta: 10 FPS"));
+}
+
+void setup() {
+  pinMode(TFT_CS, OUTPUT);
+  digitalWrite(TFT_CS, HIGH);
+
+  pinMode(SD_CS, OUTPUT);
+  digitalWrite(SD_CS, HIGH); // desativa o leitor microSD, se estiver ligado ao D9
+
+  pinMode(JOY_SW, INPUT_PULLUP);
+
+  buttonRawState = digitalRead(JOY_SW);
+  buttonStableState = buttonRawState;
+  buttonChangedAt = millis();
+
+  Serial.begin(SERIAL_BAUD);
+  SPI.begin();
+
+  tft.initR(INITR_BLACKTAB);
+  tft.setRotation(1); // paisagem: 160 x 128
+  showStartupScreen();
+}
+
+void loop() {
+  serviceJoystick();
+  serviceSerialInput();
+  serviceJoystick();
+}
