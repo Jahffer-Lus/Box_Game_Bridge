@@ -108,10 +108,28 @@ void drawReceivedTile() {
   }
 }
 
+void showWaitingTransmissionScreen() {
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextWrap(false);
+  tft.setTextSize(1);
+  tft.setTextColor(ST77XX_CYAN);
+  tft.setCursor(12, 30);
+  tft.println(F("BOX GAME BRIDGE"));
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setCursor(12, 54);
+  tft.println(F("Conectado ao PC"));
+  tft.setTextColor(ST77XX_YELLOW);
+  tft.setCursor(12, 76);
+  tft.println(F("Aguardando a"));
+  tft.setCursor(12, 90);
+  tft.println(F("transmissao..."));
+}
+
 void processSerialByte(uint8_t value) {
   switch (rxState) {
     case RX_WAIT_B:
       if (value == 'B') rxState = RX_WAIT_X;
+      else if (value == 'W') showWaitingTransmissionScreen();
       break;
 
     case RX_WAIT_X:
