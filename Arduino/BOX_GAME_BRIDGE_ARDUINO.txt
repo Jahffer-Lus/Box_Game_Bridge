@@ -2,10 +2,9 @@
   BOX GAME BRIDGE 1.0 - firmware do Arduino Uno R3
   Copie este codigo para um sketch novo da Arduino IDE.
 
-  Hardware:
-    TFT ST7735: CS D10, DC D8, RST D7, MOSI D11, SCK D13
-    Joystick:  VRx A0, VRy A1, SW D2
-    SD_CS (se existir no modulo TFT): D9 mantido em HIGH (desativado)
+  Hardware (nova pinagem):
+    TFT ST7735: CS D2, RST D3, DC/A0 D4, SDA/MOSI D5, SCK D6
+    Joystick: SW D7, VRX A5, VRY A4
 
   Protocolo recebido do PC (inteiros multibyte em big-endian):
     'B' 'X' 0x01 0x01 seq_hi seq_lo tile_count_hi tile_count_lo
@@ -24,19 +23,19 @@
     - Ele guarda somente um tile de 8x8 (128 bytes), nao a tela inteira.
 */
 
-#include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 
 // ---------------- PINOS ----------------
-#define TFT_CS    10
-#define TFT_DC     8
-#define TFT_RST    7
-#define SD_CS      9   // opcional: manter o leitor SD desativado, se conectado
+#define TFT_CS     2
+#define TFT_RST    3
+#define TFT_DC     4   // pino A0/DC da TFT
+#define TFT_MOSI   5   // pino SDA da TFT: dados SPI
+#define TFT_SCLK   6   // pino SCK da TFT
 
-#define JOY_X     A0
-#define JOY_Y     A1
-#define JOY_SW     2
+#define JOY_SW     7
+#define JOY_X     A5   // VRX do joystick
+#define JOY_Y     A4   // VRY do joystick
 
 // ---------------- TELA / PROTOCOLO ----------------
 static const uint16_t SCREEN_W = 160;
@@ -48,7 +47,8 @@ static const uint8_t PROTOCOL_VERSION = 1;
 static const uint8_t PACKET_FRAME_TILES = 1;
 static const uint32_t SERIAL_BAUD = 500000UL;
 
-Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_RST); // SPI de hardware do Uno
+// SPI por software nos pinos definidos: MOSI D5 e SCK D6.
+Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 // Um tile RGB565 ocupa 8*8*2 = 128 bytes. Isso cabe na SRAM do Uno.
 uint16_t tilePixels[TILE_SIZE * TILE_SIZE];
@@ -288,9 +288,6 @@ void setup() {
   pinMode(TFT_CS, OUTPUT);
   digitalWrite(TFT_CS, HIGH);
 
-  pinMode(SD_CS, OUTPUT);
-  digitalWrite(SD_CS, HIGH); // desativa o leitor microSD, se estiver ligado ao D9
-
   pinMode(JOY_SW, INPUT_PULLUP);
 
   buttonRawState = digitalRead(JOY_SW);
@@ -298,7 +295,6 @@ void setup() {
   buttonChangedAt = millis();
 
   Serial.begin(SERIAL_BAUD);
-  SPI.begin();
 
   tft.initR(INITR_BLACKTAB);
   tft.setRotation(1); // paisagem: 160 x 128
