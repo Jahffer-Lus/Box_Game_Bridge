@@ -46,6 +46,7 @@ public class BoxGameBridge {
     private final JLabel portStatus = new JLabel("Arduino: não conectado");
     private final JLabel runStatus = new JLabel("Pronto para procurar os dispositivos.");
     private final JLabel fpsStatus = new JLabel("Transmissão: parada");
+    private final JLabel previewLabel = new JLabel("Prévia da captura do PC aparecerá aqui", SwingConstants.CENTER);
     private final JComboBox<String> portBox = new JComboBox<>();
     private final JButton findGameButton = new JButton("Procurar Undertale");
     private final JButton findPortButton = new JButton("Procurar Arduino");
@@ -102,7 +103,12 @@ public class BoxGameBridge {
         root.add(section("2. PORTA USB DO ARDUINO", portStatus,
                 row(portBox, findPortButton, connectButton)));
         root.add(Box.createVerticalStrut(12));
-        root.add(section("3. TRANSMISSÃO", runStatus, fpsStatus,
+        previewLabel.setPreferredSize(new Dimension(240, 192));
+        previewLabel.setMinimumSize(new Dimension(240, 192));
+        previewLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        previewLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        root.add(section("3. TRANSMISSÃO", runStatus, fpsStatus, previewLabel,
                 row(startButton, stopButton)));
         root.add(Box.createVerticalStrut(14));
         JTextArea info = new JTextArea(
@@ -341,6 +347,8 @@ public class BoxGameBridge {
                 BufferedImage screen = robot.createScreenCapture(
                         new Rectangle(target.x, target.y, target.width, target.height));
                 BufferedImage small = fitToDisplay(screen);
+                // Prévia mostra exatamente a imagem reduzida que será enviada à TFT.
+                SwingUtilities.invokeLater(() -> previewLabel.setIcon(new ImageIcon(small)));
                 int sent = sendChangedTiles(small, lastSent);
                 frames++;
                 long elapsed = System.nanoTime() - tick;
