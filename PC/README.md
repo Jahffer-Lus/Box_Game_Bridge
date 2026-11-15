@@ -20,7 +20,7 @@ java -jar BoxGameBridge.jar
 
 O arquivo `.java` continua no repositório como código-fonte para futuras atualizações; o `.jar` é o aplicativo compilado.
 
-Ao clicar em **Conectar Arduino**, o aplicativo envia o aviso `W` ao firmware, e a TFT mostra **Conectado ao PC — Aguardando a transmissão...**. A imagem só começa a aparecer quando você clicar em **Iniciar transmissão**. A aplicação também procura a janela do Undertale, captura a janela, reduz a imagem para 160×128 e transmite blocos alterados. Os comandos do joystick são recebidos pela serial.
+Ao clicar em **Conectar Arduino**, o aplicativo envia o aviso `W` ao firmware, e a TFT mostra **Conectado ao PC — Aguardando a transmissão...**. A imagem só começa a aparecer quando você clicar em **Iniciar transmissão**. A aplicação também procura a janela do Undertale, captura a janela, reduz a imagem para 160×128 e transmite blocos alterados. Agora envia **um bloco 8×8 por vez** e aguarda a confirmação `R` do Arduino antes do próximo, evitando sobrecarregar a recepção serial enquanto a TFT é atualizada. Os comandos do joystick são recebidos pela serial.
 
 A meta inicial é até 10 FPS; a taxa real depende da quantidade de blocos alterados e da velocidade serial.
 
