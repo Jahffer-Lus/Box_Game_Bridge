@@ -9,12 +9,9 @@ Esta pasta contém o programa que roda no computador com Arch Linux.
 
 ## Aplicativo JAR
 
-O repositório gera automaticamente o aplicativo executável `BoxGameBridge.jar` sempre que o código Java é atualizado. Para baixar:
+O GitHub Actions compila o código Java e, quando a compilação termina com sucesso, grava `BoxGameBridge.jar` diretamente nesta pasta `PC/`. Também disponibiliza uma cópia na seção **Artifacts** da execução. Aguarde a execução **Gerar BOX GAME BRIDGE JAR** terminar em verde antes de atualizar a página do repositório.
 
-1. Abra a aba **Actions** do repositório no GitHub.
-2. Entre na execução mais recente de **Gerar BOX GAME BRIDGE JAR**.
-3. Na seção **Artifacts**, baixe `BoxGameBridge` e extraia o ZIP. Dentro estará `BoxGameBridge.jar`.
-4. Execute no Arch Linux:
+Para executar no Arch Linux:
 
 ```bash
 sudo pacman -S jre-openjdk wmctrl xdotool
