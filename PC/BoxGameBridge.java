@@ -224,6 +224,9 @@ public class BoxGameBridge {
             serialReaderThread = new Thread(this::readArduino, "BOX-Serial-Reader");
             serialReaderThread.setDaemon(true);
             serialReaderThread.start();
+            // Avisa ao firmware que a conexão foi aberta, mas a transmissão ainda não começou.
+            serialOut.write('W');
+            serialOut.flush();
             connectButton.setText("Desconectar");
             setLabel(portStatus, "Conectado em " + device + " a " + BAUD + " baud.");
         } catch (Exception ex) {
