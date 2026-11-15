@@ -33,28 +33,28 @@
 
 ## 🖥️ 2. Ligações da TFT ST7735
 
-O projeto usa o **SPI de hardware** do Arduino Uno para a tela.
+Com a nova pinagem, o projeto usa **SPI por software**: MOSI em D5 e SCK em D6. Isso permite usar os pinos escolhidos, mas pode ser mais lento do que o SPI de hardware.
 
 | Pino escrito na TFT | Arduino Uno | Observação |
 |---|---|---|
 | GND | GND | Terra comum |
 | VCC | 3V3* | Confirmar a tensão exigida pelo módulo |
-| CS | D10 | Seleção da tela |
-| DC ou A0 | D8 | Dados/comandos |
-| RST ou RES | D7 | Reset da tela |
-| SDA ou MOSI | D11 (MOSI) | Dados SPI |
-| SCL, SCK ou CLK | D13 (SCK) | Clock SPI |
+| CS | D2 | Seleção da tela |
+| RST ou RES | D3 | Reset da tela |
+| DC ou A0 | D4 | Dados/comandos |
+| SDA ou MOSI | D5 | Dados SPI por software |
+| SCL, SCK ou CLK | D6 | Clock SPI por software |
 | LED ou BL | Conforme o módulo | Manter a ligação de backlight indicada pelo fabricante |
 
 * Use 3,3 V apenas se essa for a tensão especificada para a alimentação do seu módulo. A tensão de alimentação e a tolerância dos sinais lógicos são coisas diferentes: confira ambas.
 
 ### Importante sobre os nomes dos pinos
 
-- Na TFT SPI, o pino chamado **SDA normalmente é MOSI**. Ele não é o SDA I2C do Arduino A4.
-- Para este esquema, não use A4/A5 como se fossem os pinos SPI.
+- Na TFT SPI, o pino chamado **SDA normalmente é MOSI**. Aqui ele vai ao D5; não é o SDA I2C do Arduino A4.
+- Para esta pinagem, SDA/MOSI da TFT vai ao D5 e SCK vai ao D6.
+- A4 e A5 ficam reservados para os dois eixos do joystick.
 - A tela ST7735 não precisa de MISO para receber os pixels.
-- Se o módulo tiver um pino separado chamado `SD_CS` ou `SD_CS#`, e você quiser manter o leitor microSD desativado, ligue esse pino ao D9. O firmware manterá D9 em HIGH.
-- Se não existir um pino SD_CS acessível, não invente uma ligação.
+- O leitor microSD não é usado pelo BOX GAME BRIDGE. Não é necessário ligá-lo.
 - O BOX GAME BRIDGE **não usa o microSD**. O cartão pode ficar fora do módulo.
 
 ---
@@ -65,13 +65,13 @@ O projeto usa o **SPI de hardware** do Arduino Uno para a tela.
 |---|---|
 | GND | GND |
 | VCC ou +5V | 5V* |
-| VRx | A0 |
-| VRy | A1 |
-| SW | D2 |
+| VRX | A5 |
+| VRY | A4 |
+| SW | D7 |
 
 * Para um módulo joystick KY-023 comum. Confira a identificação do seu módulo antes de alimentar.
 
-O firmware lê os eixos pelos pinos analógicos A0/A1 e o botão pelo D2. O botão **SW equivale a Enter** no jogo.
+O firmware lê VRX em A5, VRY em A4 e o botão SW em D7. O botão **SW equivale a Enter** no jogo.
 
 ---
 
