@@ -4,24 +4,17 @@ Projeto para usar a TFT conectada ao Arduino como uma pequena tela externa para 
 
 ## Estrutura do repositório
 
-```text
-Box_Game_Bridge/
-├── Arduino/
-│   └── README.md
-├── PC/
-│   ├── BoxGameBridge.java
-│   ├── LEIA-ME_BOX_GAME_BRIDGE.txt
-│   └── README.md
-└── README.md
-```
+- **[Arduino/](Arduino/)** — local do firmware que será desenvolvido.
+- **[PC/](PC/)** — aplicativo Java para Arch Linux.
+- **[Bibliotecas/](Bibliotecas/)** — pacote ZIP das bibliotecas necessárias para a TFT.
+- **[GUIA_HARDWARE_E_LIGACOES.txt](GUIA_HARDWARE_E_LIGACOES.txt)** — componentes necessários, ligação fio por fio, bibliotecas e instalação.
 
-## Pastas
+## Bibliotecas
 
-- **PC/** — aplicativo Java para Arch Linux. Procura a janela do Undertale e a porta serial do Arduino, captura a imagem, reduz para 160×128 e envia somente blocos alterados. Também transforma os comandos do joystick em teclas.
-- **Arduino/** — local do firmware para ler o joystick, receber os blocos de imagem e atualizar a TFT. O firmware ainda será desenvolvido.
+Baixe o pacote completo em [Bibliotecas/BOX_GAME_BRIDGE_LIBRARIES.zip](Bibliotecas/BOX_GAME_BRIDGE_LIBRARIES.zip). Ele contém Adafruit GFX 1.12.6, Adafruit ST7735 1.12.0 e Adafruit BusIO 1.17.4.
 
 ## Objetivo inicial
 
 Meta de até 10 FPS. Isso é uma meta, não uma garantia: a velocidade real depende da quantidade de blocos que mudam, da captura da janela e da transmissão serial.
 
-Consulte primeiro o [README do PC](PC/README.md) e o [README do Arduino](Arduino/README.md).
+Consulte primeiro o [README do PC](PC/README.md), o [README do Arduino](Arduino/README.md) e o guia de hardware.
