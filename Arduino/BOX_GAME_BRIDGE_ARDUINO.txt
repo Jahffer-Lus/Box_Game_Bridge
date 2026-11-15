@@ -127,6 +127,9 @@ void showWaitingTransmissionScreen() {
   tft.println(F("Aguardando a"));
   tft.setCursor(12, 90);
   tft.println(F("transmissao..."));
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setCursor(12, 112);
+  tft.println(F("PROTOCOLO R ATIVO"));
 }
 
 void processSerialByte(uint8_t value) {
